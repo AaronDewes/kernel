@@ -1368,6 +1368,27 @@
 		status = "disabled";
 	};
 
+	vpu: vpu_service@ff650000 {
+		compatible = "rockchip,vpu_service";
+		rockchip,grf = <&grf>;
+		iommus = <&vpu_mmu>;
+		iommu_enabled = <1>;
+		reg = <0x0 0xff650000 0x0 0x800>;
+		interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH 0>,
+			     <GIC_SPI 114 IRQ_TYPE_LEVEL_HIGH 0>;
+		interrupt-names = "irq_dec", "irq_enc";
+		clocks = <&cru ACLK_VCODEC>, <&cru HCLK_VCODEC>;
+		clock-names = "aclk_vcodec", "hclk_vcodec";
+		resets = <&cru SRST_H_VCODEC>, <&cru SRST_A_VCODEC>;
+		reset-names = "video_h", "video_a";
+		power-domains = <&power RK3399_PD_VCODEC>;
+		name = "vpu_service";
+		dev_mode = <0>;
+		/* 0 means ion, 1 means drm */
+		allocator = <1>;
+		status = "disabled";
+	};
+
 	vpu_mmu: iommu@ff650800 {
 		compatible = "rockchip,iommu";
 		reg = <0x0 0xff650800 0x0 0x40>;
@@ -1412,6 +1433,17 @@
 		power-domains = <&power RK3399_PD_VDU>;
 		#iommu-cells = <0>;
 		status = "disabled";
+	};
+
+	vdec_mmu: iommu@ff660480 {
+		compatible = "rockchip,iommu";
+		reg = <0x0 0xff660480 0x0 0x40>, <0x0 0xff6604c0 0x0 0x40>;
+		interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL_HIGH 0>;
+		interrupt-names = "vdec_mmu";
+		clocks = <&cru ACLK_VDU>, <&cru HCLK_VDU>;
+		clock-names = "aclk", "hclk";
+		power-domains = <&power RK3399_PD_VDU>;
+		#iommu-cells = <0>;
 	};
 
 	iep: iep@ff670000 {
@@ -3083,14 +3115,31 @@
 		};
 
 		pcie {
-			pcie_clkreqn_cpm: pci-clkreqn-cpm {
+			pcie_clkreqn: pci-clkreqn {
 				rockchip,pins =
-					<2 RK_PD2 RK_FUNC_GPIO &pcfg_pull_none>;
+					<2 26 RK_FUNC_2 &pcfg_pull_none>;
+			};
+
+			pcie_clkreqnb: pci-clkreqnb {
+				rockchip,pins =
+					<4 24 RK_FUNC_1 &pcfg_pull_none>;
+			};
+
+			pcie_clkreqn_cpm: pci-clkreqn-cpm {
+				/*
+				 * Since our pcie doesn't support
+				 * ClockPM(CPM), we want to hack this as
+				 * gpio, so the EP could be able to
+				 * de-assert it along and make ClockPM(CPM)
+				 * work.
+				 */
+				rockchip,pins =
+					<2 26 RK_FUNC_GPIO &pcfg_pull_none>;
 			};
 
 			pcie_clkreqnb_cpm: pci-clkreqnb-cpm {
 				rockchip,pins =
-					<4 RK_PD0 RK_FUNC_GPIO &pcfg_pull_none>;
+					<4 24 RK_FUNC_GPIO &pcfg_pull_none>;
 			};
 		};
 
